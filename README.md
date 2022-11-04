@@ -4,7 +4,27 @@ This is a TINY wrapper around URLSearchParams.
 
 It's a query string parsing library. That is type safe.
 
-It's reads off of `window.location`.
+It parses `globalThis.location.search` by default.
+
+The benefit of this library, is that it will throw errors
+if you have duplicate query params. This may be desirable
+in environments where you want to be strict about your query params.
+
+If you aren't concerned with other devs/sys admins adding query params with incorrect casing,
+then just do this:
+
+```ts
+window.location.search.includes('foo=1')
+```
+
+Or this:
+
+```ts
+const params = new URLSearchParams(
+  window.location.search,
+)
+params.get('foo') === '1'
+```
 
 # Usage
 
@@ -13,6 +33,32 @@ import { getParam } from 'actually-good-query-param-parser-lib'
 
 const param = getParam('paramName')
 // Returns `string | undefined`
+```
+
+You can avoid throwing errors in prod by passing in an `isProd` boolean:
+
+```ts
+// env.ts:
+export const isProd =
+  process.env.NODE_ENV ===
+    'production' &&
+  location.origin ===
+    'https://www.domain.com'
+
+// component.tsx:
+import { isProd } from './env'
+
+const param = getParam('paramName', {
+  isProd,
+})
+```
+
+In edge cases, you can pass in your own queryString:
+
+```ts
+const param = getParam('paramName', {
+  queryString: '?paramName=1',
+})
 ```
 
 ## Contributing
