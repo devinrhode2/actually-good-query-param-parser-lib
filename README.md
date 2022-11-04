@@ -7,43 +7,13 @@ It's a query string parsing library. That is type safe.
 It's reads off of `window.location`.
 
 # Usage
-```ts
-import { getParam } from 'actually-good-query-param-parser-lib';
 
-const param = getParam('paramName');
+```ts
+import { getParam } from 'actually-good-query-param-parser-lib'
+
+const param = getParam('paramName')
 // Returns `string | undefined`
 ```
-
-
-const params = new URLSearchParams(window.location.search);
-const paramValues = params.getAll('foo')
-if (paramValues.length > 0) {
-  throw new Error('Multiple foo params found:' + paramValues.join(','));
-  // you can catch the error and console.error it if you want.
-  // but this lib/strictest import won't be doing that.
-  //
-  // A separate import could do that.
-  //   Throw in development, console.error in prod.
-  //   You probably need to pass in an `isProd` variable to opt into that behavior.
-  // Or more simply:
-  //   
-  //   { throwIf: !isProd }
-  //
-  // If you do go in that direction,
-  // you'll probably want to default to the first one,
-  // because that's what params.get('foo') does.
-  //  And:
-  //    If there is no `foo` param, convert everything to lower case and try again(??)
-  // An additional check could be added to development mode only:
-  //  If there is no `foo` param, convert all param keys to lower case, try again, and throw error that their key casing is wrong.
-  //  If there is no `foo` param, params.forEach, call .toLowerCase on all keys, and ????
-  // But what about standard case where param is just missing?
-}
-return paramValues[0]
-
-
-
-
 
 ## Contributing
 
