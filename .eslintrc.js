@@ -1,6 +1,9 @@
 /** @type {import('eslint').Linter.BaseConfig} */
 module.exports = {
   parser: '@typescript-eslint/parser', // Specifies the ESLint parser
+  env: {
+    es2022: true,
+  },
   extends: [
     'xo',
     'airbnb',

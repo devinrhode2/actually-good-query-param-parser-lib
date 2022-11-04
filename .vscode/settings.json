@@ -61,5 +61,9 @@
       "source.formatDocument"
     ]
   },
-  "cSpell.words": ["", "devinrhode", "tsdx"]
+  "cSpell.words": [
+    "devinrhode",
+    "eslintbase",
+    "tsdx"
+  ]
 }

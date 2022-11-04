@@ -1,0 +1,18 @@
+// copied from https://github.com/typescript-eslint/typescript-eslint/blob/main/tsconfig.eslint.json
+{
+  "compilerOptions": {
+    "types": ["@types/node"],
+    "noEmit": true,
+    "allowJs": true
+  },
+  "extends": "./tsconfig.eslintbase.json",
+  "include": [
+    "src",
+    "tools/**/*.ts",
+    ".eslintrc.js",
+    "jest.config.base.js",
+    "jest.config.js",
+    "jest.preset.js",
+    "tests/jest-resolver.js"
+  ]
+}

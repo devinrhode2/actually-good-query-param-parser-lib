@@ -10,7 +10,8 @@ export const reportError = (
 }
 
 /**
- * Trades performance for "reliability" (i.e. throw error if anything even smells wrong)
+ * Trades performance for "reliability"
+ * (i.e. throw error if anything even smells wrong)
  *
  * Always just returns the first query param with the casing requested.
  */
@@ -29,12 +30,17 @@ export const getParam = (
   },
 ) => {
   if (queryString == null) {
+    // IMO - code is more readable when re-assigning this parameter
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, no-param-reassign
     queryString =
-      globalThis?.location?.search
+      // This eslint error does nto make sense to me. Optional chaining should make all the member access safe here.
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      globalThis?.location?.search ??
+      undefined
   }
-  if (queryString == null) {
+  if (typeof queryString !== 'string') {
     throw new Error(
-      'globalThis.location.search is not defined, please pass in explicit queryString',
+      'location.search is undefined/not a string, please pass in explicit queryString',
     )
   }
 
@@ -45,21 +51,20 @@ export const getParam = (
   const lowerCaseFoo = foo.toLowerCase()
   let haveFoundAFoo = false
 
-  params.forEach((_value, key) => {
+  params.forEach((value, key) => {
     if (
       key.toLowerCase() === lowerCaseFoo
     ) {
       // Ok, we found one.
       // Have we found a SECOND one?
       if (haveFoundAFoo) {
-        const errorMessage =
-          'Multiple foo params found with different casing/capitalization'
+        const error = new Error(
+          `Found duplicate "${foo}" param: ${key}=${value}`,
+        )
         if (isProd) {
-          reportError(
-            new Error(errorMessage),
-          )
+          reportError(error)
         } else {
-          console.error(errorMessage)
+          throw error
         }
       } else {
         haveFoundAFoo = true
