@@ -41,12 +41,16 @@ export const getQueryParam = <
   /** The param our caller is requesting */
   requestedParam: string,
   {
+    // TODO: fix ts/eslint config
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     queryString = window.location
       .search ?? undefined,
     urlSearchParams,
     strictMode = typeof window !==
     'undefined'
-      ? window.location.hostname ===
+      ? // TODO: fix ts/eslint config
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        window.location.hostname ===
         'localhost'
       : false, // window is undefined, this could be node.js server side rendering: Assume prod (strictMode: false).
     throwIfMissing = false as TThrowIfMissing,
@@ -100,6 +104,8 @@ export const getQueryParam = <
       if (strictMode) {
         throw error
       } else {
+        // TODO: fix ts/eslint config
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-call
         reportError(error)
       }
     } else {
