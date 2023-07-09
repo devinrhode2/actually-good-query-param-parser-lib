@@ -42,12 +42,12 @@ export const getQueryParam = <
     queryString = window.location
       .search ?? undefined,
     urlSearchParams,
-    isProd = typeof window !==
+    strictMode = typeof window !==
     'undefined'
-      ? // TODO: use an actual url check for "prod"?
-        window.location.hostname !==
-        'localhost' // treat all higher environments as "prod".
-      : true /* window is undefined, assume prod, this could be node.js server side rendering. */,
+      ? // NOTE: Could also consider dev.foo.com as "non-prod"
+        window.location.hostname ===
+        'localhost'
+      : false, // window is undefined, this could be node.js server side rendering: Assume prod (strictMode: false).
     throwIfMissing = false as TThrowIfMissing,
   }: {
     /** Defaults to location.search */
@@ -58,19 +58,18 @@ export const getQueryParam = <
     /** Ignore location.search, just directly use your instance of URLSearchParams */
     urlSearchParams?: URLSearchParams
     /**
-     * If in prod, avoid crashing.
+     * Crash if any duplicate params are detected.
      *
-     * Defaults to checking if hostname is 'localhost'
+     * Defaults to true on localhost.
      */
-    isProd?: boolean
+    strictMode?: boolean
     /**
      * Crash if query param is missing or empty.
      *
-     * This option is required to be passed in, for now.
-     * Once we use this more (5+ callsites) we can then set a default of true/false, and make options object optional too.
+     * Defaults to `false` (don't crash)
      */
     throwIfMissing?: TThrowIfMissing
-  },
+  } = {},
 ): TThrowIfMissing extends true
   ? string
   : ReturnType<
@@ -97,10 +96,10 @@ export const getQueryParam = <
       const error = new Error(
         `Found duplicate "${requestedParam}" param: ${key}=${value}`,
       )
-      if (isProd) {
-        reportError(error)
-      } else {
+      if (strictMode) {
         throw error
+      } else {
+        reportError(error)
       }
     } else {
       haveFoundParam = true
