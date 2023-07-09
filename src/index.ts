@@ -1,4 +1,3 @@
-/* eslint-disable import/prefer-default-export */
 /**
  * Trades performance for "reliability"
  * (i.e. throw/report error if anything smells wrong)
