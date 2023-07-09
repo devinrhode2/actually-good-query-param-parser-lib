@@ -1,65 +1,87 @@
-/**
- * Send error to global error handler, in a natural, unobtrusive way.
- */
-export const reportError = (
-  exception: Error,
-) => {
-  setTimeout(() => {
-    throw exception
-  }, 0)
-}
-
+/* eslint-disable import/prefer-default-export */
 /**
  * Trades performance for "reliability"
- * (i.e. throw error if anything even smells wrong)
+ * (i.e. throw/report error if anything smells wrong)
  *
  * Always just returns the first query param with the casing requested.
+ *
+ * If you have perfect control of your queryParams, you shouldn't need this.
+ *
+ * NOTE: Supporting multiple query params gets really complicated:
+ * We end up returning or throwing multiple errors,
+ * are tempted to write very complicated optimal iteration over query params,
+ * it could happen, but might be a 2-3 day endeavor.
  */
-export const getParam = (
-  foo: string,
+export const getQueryParam = <
+  TThrowIfMissing extends boolean
+>(
+  /** The param our caller is requesting */
+  fooParam: string,
   {
-    queryString,
-    isProd = false,
+    unparsedQueryString,
+    isProd = typeof window !==
+    'undefined'
+      ? // TODO: use an actual url check for "prod"?
+        window.location.hostname !==
+        'localhost' // treat all higher environments as "prod".
+      : true /* window is undefined, assume prod, this could be node.js server side rendering. */,
+    throwIfMissing,
   }: {
-    queryString?:
+    /** Defaults to location.search */
+    unparsedQueryString?:
       | string
       | undefined
       | null
-    /** If in prod, avoid crashing */
+    /**
+     * If in prod, avoid crashing.
+     *
+     * Defaults to checking if hostname is 'localhost'
+     */
     isProd?: boolean
+    /**
+     * Crash if query param is missing or empty.
+     *
+     * This option is required to be passed in, for now.
+     * Once we use this more (5+ callsites) we can then set a default of true/false, and make options object optional too.
+     */
+    throwIfMissing: TThrowIfMissing
   },
-) => {
-  if (queryString == null) {
-    // IMO - code is more readable when re-assigning this parameter
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, no-param-reassign
-    queryString =
-      // This eslint error does nto make sense to me. Optional chaining should make all the member access safe here.
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      globalThis?.location?.search ??
+): TThrowIfMissing extends true
+  ? string
+  : ReturnType<
+      URLSearchParams['get']
+    > => {
+  if (unparsedQueryString == null) {
+    // eslint-disable-next-line no-param-reassign
+    unparsedQueryString =
+      globalThis.location?.search ??
       undefined
   }
-  if (typeof queryString !== 'string') {
+  if (
+    typeof unparsedQueryString !==
+    'string'
+  ) {
     throw new Error(
       'location.search is undefined/not a string, please pass in explicit queryString',
     )
   }
 
   const params = new URLSearchParams(
-    queryString,
+    unparsedQueryString,
   )
 
-  const lowerCaseFoo = foo.toLowerCase()
+  const lowerCaseFoo = fooParam.toLowerCase()
   let haveFoundAFoo = false
 
   params.forEach((value, key) => {
+    // If we found one:
     if (
       key.toLowerCase() === lowerCaseFoo
     ) {
-      // Ok, we found one.
-      // Have we found a SECOND one?
+      // Have we found a SECOND one:
       if (haveFoundAFoo) {
         const error = new Error(
-          `Found duplicate "${foo}" param: ${key}=${value}`,
+          `Found duplicate "${fooParam}" param: ${key}=${value}`,
         )
         if (isProd) {
           reportError(error)
@@ -72,6 +94,22 @@ export const getParam = (
     }
   })
 
-  // Just always give the caller the first one with the casing they requested.
-  return params.get(foo)
+  // Always give the caller the first one with the casing they requested.
+  const paramValue = params.get(
+    fooParam,
+  )
+
+  if (paramValue) {
+    return paramValue
+  }
+  if (throwIfMissing) {
+    throw new Error(
+      `${fooParam} is missing, and throwIfMissing is true.`,
+    )
+  }
+  // TODO: fix conditional return type?
+  // @ts-expect-error - snapshot:
+  //  Type 'string | null' is not assignable to type 'TThrowIfMissing extends true ? string : string | null'.
+  //    Type 'null' is not assignable to type 'TThrowIfMissing extends true ? string : string | null'.ts(2322)
+  return paramValue
 }
