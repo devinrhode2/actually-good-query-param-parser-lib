@@ -21,12 +21,14 @@ const getUrlSearchParams = (
 }
 
 /**
- * Trades performance for "reliability"
+ * Trades performance for predictability.
  * (i.e. throw/report error if anything smells wrong)
  *
- * Always just returns the first query param with the casing requested.
+ * You should use this for query params which people are entering manually.
  *
  * If you have perfect control of your queryParams, you shouldn't need this.
+ *
+ * Always just returns the first query param with the casing requested.
  *
  * NOTE: Supporting multiple query params gets really complicated:
  * We end up returning or throwing multiple errors,
@@ -44,8 +46,7 @@ export const getQueryParam = <
     urlSearchParams,
     strictMode = typeof window !==
     'undefined'
-      ? // NOTE: Could also consider dev.foo.com as "non-prod"
-        window.location.hostname ===
+      ? window.location.hostname ===
         'localhost'
       : false, // window is undefined, this could be node.js server side rendering: Assume prod (strictMode: false).
     throwIfMissing = false as TThrowIfMissing,
