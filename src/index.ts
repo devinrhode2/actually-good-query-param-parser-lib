@@ -1,3 +1,25 @@
+const getUrlSearchParams = (
+  queryString:
+    | string
+    | Record<string, string>
+    | string[][]
+    | undefined,
+): URLSearchParams => {
+  // if queryString is an empty string.. then there are no params, the final return value (params.get(param)) will be `null` (this is not an exception)
+  if (queryString === undefined) {
+    throw new Error(
+      [
+        'location.search is undefined, please pass in explicit queryString:',
+        "getQueryParam('foobar', { queryString: someQueryParams })",
+      ].join('\n'),
+    )
+  }
+
+  return new URLSearchParams(
+    queryString,
+  )
+}
+
 /**
  * Trades performance for "reliability"
  * (i.e. throw/report error if anything smells wrong)
@@ -12,25 +34,29 @@
  * it could happen, but might be a 2-3 day endeavor.
  */
 export const getQueryParam = <
-  TThrowIfMissing extends boolean
+  TThrowIfMissing extends boolean = false
 >(
   /** The param our caller is requesting */
-  fooParam: string,
+  requestedParam: string,
   {
-    unparsedQueryString,
+    queryString = window.location
+      .search ?? undefined,
+    searchParams,
     isProd = typeof window !==
     'undefined'
       ? // TODO: use an actual url check for "prod"?
         window.location.hostname !==
         'localhost' // treat all higher environments as "prod".
       : true /* window is undefined, assume prod, this could be node.js server side rendering. */,
-    throwIfMissing,
+    throwIfMissing = false as TThrowIfMissing,
   }: {
     /** Defaults to location.search */
-    unparsedQueryString?:
+    queryString?:
       | string
-      | undefined
-      | null
+      | string[][]
+      | Record<string, string>
+    /** Ignore location.search, just directly use your instance of URLSearchParams */
+    searchParams?: URLSearchParams
     /**
      * If in prod, avoid crashing.
      *
@@ -43,59 +69,47 @@ export const getQueryParam = <
      * This option is required to be passed in, for now.
      * Once we use this more (5+ callsites) we can then set a default of true/false, and make options object optional too.
      */
-    throwIfMissing: TThrowIfMissing
+    throwIfMissing?: TThrowIfMissing
   },
 ): TThrowIfMissing extends true
   ? string
   : ReturnType<
       URLSearchParams['get']
     > => {
-  if (unparsedQueryString == null) {
-    // eslint-disable-next-line no-param-reassign
-    unparsedQueryString =
-      globalThis.location?.search ??
-      undefined
-  }
-  if (
-    typeof unparsedQueryString !==
-    'string'
-  ) {
-    throw new Error(
-      'location.search is undefined/not a string, please pass in explicit queryString',
-    )
-  }
+  const params =
+    searchParams ||
+    getUrlSearchParams(queryString)
 
-  const params = new URLSearchParams(
-    unparsedQueryString,
-  )
-
-  const lowerCaseFoo = fooParam.toLowerCase()
-  let haveFoundAFoo = false
+  const lowerCaseParam = requestedParam.toLowerCase()
+  let haveFoundParam = false
 
   params.forEach((value, key) => {
-    // If we found one:
     if (
-      key.toLowerCase() === lowerCaseFoo
-    ) {
-      // Have we found a SECOND one:
-      if (haveFoundAFoo) {
-        const error = new Error(
-          `Found duplicate "${fooParam}" param: ${key}=${value}`,
-        )
-        if (isProd) {
-          reportError(error)
-        } else {
-          throw error
-        }
+      key.toLowerCase() !==
+      lowerCaseParam
+    )
+      return
+
+    // We found one!
+
+    // Is this the second time?
+    if (haveFoundParam) {
+      const error = new Error(
+        `Found duplicate "${requestedParam}" param: ${key}=${value}`,
+      )
+      if (isProd) {
+        reportError(error)
       } else {
-        haveFoundAFoo = true
+        throw error
       }
+    } else {
+      haveFoundParam = true
     }
   })
 
   // Always give the caller the first one with the casing they requested.
   const paramValue = params.get(
-    fooParam,
+    requestedParam,
   )
 
   if (paramValue) {
@@ -103,7 +117,7 @@ export const getQueryParam = <
   }
   if (throwIfMissing) {
     throw new Error(
-      `${fooParam} is missing, and throwIfMissing is true.`,
+      `${requestedParam} is missing, and throwIfMissing is true.`,
     )
   }
   // TODO: fix conditional return type?
