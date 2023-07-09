@@ -41,7 +41,7 @@ export const getQueryParam = <
   {
     queryString = window.location
       .search ?? undefined,
-    searchParams,
+    urlSearchParams,
     isProd = typeof window !==
     'undefined'
       ? // TODO: use an actual url check for "prod"?
@@ -53,10 +53,10 @@ export const getQueryParam = <
     /** Defaults to location.search */
     queryString?:
       | string
-      | string[][]
+      | Array<[string, string]>
       | Record<string, string>
     /** Ignore location.search, just directly use your instance of URLSearchParams */
-    searchParams?: URLSearchParams
+    urlSearchParams?: URLSearchParams
     /**
      * If in prod, avoid crashing.
      *
@@ -77,7 +77,7 @@ export const getQueryParam = <
       URLSearchParams['get']
     > => {
   const params =
-    searchParams ||
+    urlSearchParams ||
     getUrlSearchParams(queryString)
 
   const lowerCaseParam = requestedParam.toLowerCase()
